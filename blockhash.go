@@ -1,10 +1,13 @@
 package blockhash
 
 import (
+    "fmt"
+    "sort"
+    "strconv"
     "image"
     "image/color"
     "math"
-    "sort"
+    "math/big"
 
     "github.com/dsoprea/go-logging"
 )
@@ -67,6 +70,12 @@ func (bh *Blockhash) configure() (err error) {
 }
 
 func (bh *Blockhash) totalValue(x, y int) (value float64) {
+    defer func() {
+        if state := recover(); state != nil {
+            log.Panic(state.(error))
+        }
+    }()
+
     c := bh.image.At(x, y)
 
     if bh.toColor != nil {
@@ -87,6 +96,12 @@ func (bh *Blockhash) totalValue(x, y int) (value float64) {
 }
 
 func (bh *Blockhash) median(data []float64) float64 {
+    defer func() {
+        if state := recover(); state != nil {
+            log.Panic(state.(error))
+        }
+    }()
+
     sort.Float64s(data)
 
     len_ := len(data)
@@ -97,7 +112,41 @@ func (bh *Blockhash) median(data []float64) float64 {
     }
 }
 
+func (bh *Blockhash) bitsToHexhash(bitString []int) string {
+    defer func() {
+        if state := recover(); state != nil {
+            log.Panic(state.(error))
+        }
+    }()
+
+    s := make([]byte, len(bitString))
+
+    for i, d := range bitString {
+        if d == 0 {
+            s[i] = '0'
+        } else if d == 1 {
+            s[i] = '1'
+        } else {
+            log.Panicf("invalid bit value (%d) at offset (%d)", d, i)
+        }
+    }
+
+    b := new(big.Int)
+    b.SetString(string(s), 2)
+
+    width := int(math.Floor(float64(bh.hashbits) / float64(4)))
+    encoded := fmt.Sprintf("%0" + strconv.Itoa(width) + "x", b)
+
+    return encoded
+}
+
 func (bh *Blockhash) translateBlocksToBits(blocksInline []float64, pixelsPerBlock float64) (results []int) {
+    defer func() {
+        if state := recover(); state != nil {
+            log.Panic(state.(error))
+        }
+    }()
+
     results = make([]int, len(blocksInline))
     halfBlockValue := pixelsPerBlock * 256.0 * 3.0 / 2.0
 
@@ -213,50 +262,10 @@ func (bh *Blockhash) process() (err error) {
     }
 
     result := bh.translateBlocksToBits(blocksInline, blockWidth * blockHeight)
-    result = result
-
-    // return bits_to_hexhash(result)
-
-
-// TODO(dustin): !! Finish.
-
-
-// TODO(dustin): Finish.
-    bh.digest = ""
+    bh.digest = bh.bitsToHexhash(result)
 
     return nil
 }
-
-// func (bh *Blockhash) medianf(data float64) float64
-// {
-//     s := sort.Float64Slice(data)
-//     s.Sort()
-
-//     len_ := len(s)
-//     if len(s) % 2 {
-//         return s[len_ / 2]
-//     } else {
-//         return (s[len_ / 2] + s[len_ / 2 + 1]) / 2
-//     }
-// }
-
-// func (bh *Blockhash) translate_blocks_to_bitsf(blocks [][]float64, nblocks int, pixelsPerBlock int) (result []uint32)
-// {
-//     result = make([]uint32, bh.hashbits * bh.hashbits)
-
-//     halfBlockValue := pixelsPerBlock * 256 * 3 / 2;
-//     bandsize := nblocks / 4;
-
-//     for i := 0; i < 4; i++ {
-//         m = bh.medianf(&blocks[i * bandsize], bandsize)
-//         for j := i * bandsize; j < (i + 1) * bandsize; j++ {
-//             v = blocks[j]
-//             result[j] = v > m || (math.Abs(v - m) < 1 && m > halfBlockValue)
-//         }
-//     }
-
-//     return result
-// }
 
 func (bh *Blockhash) Hash() string {
     defer func() {
