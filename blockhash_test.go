@@ -14,10 +14,14 @@ import (
 )
 
 const (
-    testImage1Big = "20170618_155330.jpg"
-    testImage1Small = "20170618_155330-small.jpg"
-    testImage2Big = "amazing-mountain-valley-wallpaper-29910-30628-hd-wallpapers.jpg"
-    testImage2Small = "amazing-mountain-valley-wallpaper-29910-30628-hd-wallpapers-small.jpg"
+    testImageJpeg1Big = "20170618_155330.jpg"
+    testImagePng1Big = "20170618_155330.png"
+    testImageBmp1Big = "20170618_155330.bmp"
+    testImageJpeg1Small = "20170618_155330-small.jpg"
+    testImagePng1Small = "20170618_155330-small.png"
+    testImageBmp1Small = "20170618_155330-small.bmp"
+    testImageJpeg2Big = "amazing-mountain-valley-wallpaper-29910-30628-hd-wallpapers.jpg"
+    testImageJpeg2Small = "amazing-mountain-valley-wallpaper-29910-30628-hd-wallpapers-small.jpg"
 )
 
 var (
@@ -45,7 +49,7 @@ func getTestBh(filename string) (f *os.File, bh *Blockhash) {
 }
 
 func TestBitsToHexhash_11010010(t *testing.T) {
-    f, bh := getTestBh(testImage1Big)
+    f, bh := getTestBh(testImageJpeg1Big)
     defer f.Close()
 
     digest := bh.bitsToHexhash([]int { 1, 1, 0, 1, 0, 0, 1, 0 })
@@ -56,7 +60,7 @@ func TestBitsToHexhash_11010010(t *testing.T) {
 }
 
 func TestBitsToHexhash_1(t *testing.T) {
-    f, bh := getTestBh(testImage1Big)
+    f, bh := getTestBh(testImageJpeg1Big)
     defer f.Close()
 
     digest := bh.bitsToHexhash([]int { 1 })
@@ -67,7 +71,7 @@ func TestBitsToHexhash_1(t *testing.T) {
 }
 
 func TestBitsToHexhash_101(t *testing.T) {
-    f, bh := getTestBh(testImage1Big)
+    f, bh := getTestBh(testImageJpeg1Big)
     defer f.Close()
 
     digest := bh.bitsToHexhash([]int { 1, 0, 1 })
@@ -78,7 +82,7 @@ func TestBitsToHexhash_101(t *testing.T) {
 }
 
 func TestBitsToHexhash_10101(t *testing.T) {
-    f, bh := getTestBh(testImage1Big)
+    f, bh := getTestBh(testImageJpeg1Big)
     defer f.Close()
 
     digest := bh.bitsToHexhash([]int { 1, 0, 1, 0, 1 })
@@ -91,7 +95,7 @@ func TestBitsToHexhash_10101(t *testing.T) {
 // TestBitsToHexhash_10111111111111111 One bit larger than the official bit
 // width.
 func TestBitsToHexhash_10111111111111111(t *testing.T) {
-    f, bh := getTestBh(testImage1Big)
+    f, bh := getTestBh(testImageJpeg1Big)
     defer f.Close()
 
     digest := bh.bitsToHexhash([]int { 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 })
@@ -103,7 +107,7 @@ func TestBitsToHexhash_10111111111111111(t *testing.T) {
 
 // TestBitsToHexhash_1111111111111111 Exactly the right size..
 func TestBitsToHexhash_1101111111011111(t *testing.T) {
-    f, bh := getTestBh(testImage1Big)
+    f, bh := getTestBh(testImageJpeg1Big)
     defer f.Close()
 
     digest := bh.bitsToHexhash([]int { 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1 })

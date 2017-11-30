@@ -6,6 +6,8 @@ import (
     "image"
 
     _ "image/jpeg"
+    _ "image/png"
+    _ "golang.org/x/image/bmp"
 
     "github.com/dsoprea/go-logging"
     "github.com/jessevdk/go-flags"
@@ -26,7 +28,7 @@ type options struct {
 func main() {
     defer func() {
         if state := recover(); state != nil {
-            mLog.Errorf(nil, state.(error), "There was an error.")
+            log.Panic(state)
         }
     }()
 

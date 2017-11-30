@@ -21,78 +21,43 @@ type Blockhash struct {
 }
 
 func NewBlockhash(image image.Image, hashbits int) *Blockhash {
-    bh := &Blockhash{
+    return &Blockhash{
         image: image,
         hashbits: hashbits,
     }
-
-    err := bh.configure()
-    log.PanicIf(err)
-
-    return bh
 }
 
-func (bh *Blockhash) configure() (err error) {
-    defer func() {
-        if state := recover(); state != nil {
-            err = log.Wrap(state.(error))
-        }
-    }()
-
-    cm := bh.image.ColorModel()
-
-    if cm != color.RGBAModel && cm != color.NRGBAModel {
-        switch cm {
-
-        // Convert models supporting alpha down to RGBA.
-        case color.RGBA64Model:
-        case color.AlphaModel:
-        case color.Alpha16Model:
-        case color.NYCbCrAModel:
-            bh.toColor = &color.RGBAModel
-            bh.hasAlpha = true
-
-        // Convert models not supporting alpha down to RGB.
-        case color.NRGBA64Model:
-        case color.GrayModel:
-        case color.Gray16Model:
-        case color.CMYKModel:
-        case color.YCbCrModel:
-            bh.toColor = &color.NRGBAModel
-            bh.hasAlpha = false
-
-        default:
-            log.Panicf("unsupported color model")
-        }
-    }
-
-    return nil
+type opaqueableModel interface {
+    Opaque() bool
 }
 
-func (bh *Blockhash) totalValue(x, y int) (value float64) {
+
+func (bh *Blockhash) totalValue(x, y int) (value uint32) {
     defer func() {
         if state := recover(); state != nil {
             log.Panic(state.(error))
         }
     }()
 
-    c := bh.image.At(x, y)
+    p := bh.image.At(x, y)
 
-    if bh.toColor != nil {
-        c = (*bh.toColor).Convert(c)
+    // Has the notion of opaqueness, which implies that is supports an alpha
+    // channel.
+    _, isOpaqueable := p.(opaqueableModel)
+
+    // The RGBA() will return the alpha-multiplied values but the fields will
+    // still be in their premultiplied state.
+    if bh.image.ColorModel() != color.NRGBAModel {
+        p = color.NRGBAModel.Convert(p)
     }
 
-    if bh.hasAlpha {
-        r, g, b, a := c.RGBA()
-        if a == 0 {
-            return 765
-        } else {
-            return float64(r + g + b)
-        }
-    } else {
-        r, g, b, _ := c.RGBA()
-        return float64(r + g + b)
+    c2 := p.(color.NRGBA)
+
+    if isOpaqueable == true && c2.A == 0 {
+        return 765
     }
+
+    return uint32(c2.R) + uint32(c2.G) + uint32(c2.B)
 }
 
 func (bh *Blockhash) median(data []float64) float64 {
@@ -247,13 +212,14 @@ func (bh *Blockhash) process() (err error) {
                 }
             }
 
-            blocks[blockTop][blockLeft] += value * weightTop * weightLeft
-            blocks[blockTop][blockRight] += value * weightTop * weightRight
-            blocks[blockBottom][blockLeft] += value * weightBottom * weightLeft
-            blocks[blockBottom][blockRight] += value * weightBottom * weightRight
+            blocks[blockTop][blockLeft] += float64(value) * weightTop * weightLeft
+            blocks[blockTop][blockRight] += float64(value) * weightTop * weightRight
+            blocks[blockBottom][blockLeft] += float64(value) * weightBottom * weightLeft
+            blocks[blockBottom][blockRight] += float64(value) * weightBottom * weightRight
         }
     }
 
+// TODO(dustin): !! Debug here.
     blocksInline := make([]float64, bh.hashbits * bh.hashbits)
     for y := 0; y < bh.hashbits; y++ {
         for x := 0; x < bh.hashbits; x++ {
