@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/dsoprea/go-perceptualhash.svg?branch=master)](https://travis-ci.org/dsoprea/go-perceptualhash)
+
 ## Overview
 
 This is both a library and a command-line tool that can be used to produce perceptual hashes in Go. Perceptual hashes allow you to produce a hash that uniquely describes very similar images (e.g. the same image in different sizes or palettes). This is often used for deduplication.
