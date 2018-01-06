@@ -4,6 +4,8 @@ import (
     "os"
     "fmt"
     "image"
+    "strings"
+    "math"
 
     _ "image/jpeg"
     _ "image/png"
@@ -22,7 +24,7 @@ var (
 type options struct {
     Hashbits int `long:"bits" short:"b" default:"16" description:"Hash bit length (N^2)"`
     Filepaths []string `long:"filepath" short:"f" required:"true" description:"Image file-path (provide at least once)"`
-    Digest bool `long:"digest" short:"d" description:"Just print digest (no other text)"`
+    Digest bool `long:"digest" short:"d" description:"Just print digest (no filenames)"`
 }
 
 func main() {
@@ -35,6 +37,11 @@ func main() {
     o := new(options)
     if _, err := flags.Parse(o); err != nil {
         os.Exit(1)
+    }
+
+    len_ := 0
+    for _, filepath := range o.Filepaths {
+        len_ = int(math.Max(float64(len_), float64(len(filepath))))
     }
 
     for _, filepath := range o.Filepaths {
@@ -52,7 +59,7 @@ func main() {
         if o.Digest {
             fmt.Println(hexdigest)
         } else {
-            fmt.Printf("%s %s\n", filepath, hexdigest)
+            fmt.Printf("%s%s %s\n", filepath, strings.Repeat(" ", len_ - len(filepath)), hexdigest)
         }
     }
 }

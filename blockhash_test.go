@@ -64,10 +64,11 @@ func TestBitsToHex__11010010(t *testing.T) {
     f, bh := getTestBh(testImageJpeg1Big)
     defer f.Close()
 
-    digest := bh.bitsToHex([]int { 1, 1, 0, 1, 0, 0, 1, 0 })
+    actual := bh.bitsToHex([]int { 1, 1, 0, 1, 0, 0, 1, 0 })
+    expected := "00000000000000000000000000000000000000000000000000000000000000d2"
 
-    if digest != "00d2" {
-        t.Fatalf("11010010 did not produce the right digest")
+    if actual != expected {
+        t.Fatalf("digest not correct: [%s] != [%s]", actual, expected)
     }
 }
 
@@ -75,10 +76,11 @@ func TestBitsToHex__1(t *testing.T) {
     f, bh := getTestBh(testImageJpeg1Big)
     defer f.Close()
 
-    digest := bh.bitsToHex([]int { 1 })
+    actual := bh.bitsToHex([]int { 1 })
+    expected := "0000000000000000000000000000000000000000000000000000000000000001"
 
-    if digest != "0001" {
-        t.Fatalf("digest not correct")
+    if actual != expected {
+        t.Fatalf("digest not correct: [%s] != [%s]", actual, expected)
     }
 }
 
@@ -86,10 +88,11 @@ func TestBitsToHex__101(t *testing.T) {
     f, bh := getTestBh(testImageJpeg1Big)
     defer f.Close()
 
-    digest := bh.bitsToHex([]int { 1, 0, 1 })
+    actual := bh.bitsToHex([]int { 1, 0, 1 })
+    expected := "0000000000000000000000000000000000000000000000000000000000000005"
 
-    if digest != "0005" {
-        t.Fatalf("digest not correct")
+    if actual != expected {
+        t.Fatalf("digest not correct: [%s] != [%s]", actual, expected)
     }
 }
 
@@ -97,10 +100,11 @@ func TestBitsToHex__10101(t *testing.T) {
     f, bh := getTestBh(testImageJpeg1Big)
     defer f.Close()
 
-    digest := bh.bitsToHex([]int { 1, 0, 1, 0, 1 })
+    actual := bh.bitsToHex([]int { 1, 0, 1, 0, 1 })
+    expected := "0000000000000000000000000000000000000000000000000000000000000015"
 
-    if digest != "0015" {
-        t.Fatalf("digest not correct")
+    if actual != expected {
+        t.Fatalf("digest not correct: [%s] != [%s]", actual, expected)
     }
 }
 
@@ -110,10 +114,11 @@ func TestBitsToHex__10111111111111111(t *testing.T) {
     f, bh := getTestBh(testImageJpeg1Big)
     defer f.Close()
 
-    digest := bh.bitsToHex([]int { 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 })
+    actual := bh.bitsToHex([]int { 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 })
+    expected := "0000000000000000000000000000000000000000000000000000000000017fff"
 
-    if digest != "17fff" {
-        t.Fatalf("digest not correct")
+    if actual != expected {
+        t.Fatalf("digest not correct: [%s] != [%s]", actual, expected)
     }
 }
 
@@ -122,10 +127,11 @@ func TestBitsToHex__1101111111011111(t *testing.T) {
     f, bh := getTestBh(testImageJpeg1Big)
     defer f.Close()
 
-    digest := bh.bitsToHex([]int { 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1 })
+    actual := bh.bitsToHex([]int { 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1 })
+    expected := "000000000000000000000000000000000000000000000000000000000000dfdf"
 
-    if digest != "dfdf" {
-        t.Fatalf("digest not correct")
+    if actual != expected {
+        t.Fatalf("digest not correct: [%s] != [%s]", actual, expected)
     }
 }
 
@@ -277,7 +283,7 @@ func TestBitsToHex__32(t *testing.T) {
 
     actual := bh.bitsToHex([]int { 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1 })
 
-    expected := "1248abcd"
+    expected := "000000000000000000000000000000000000000000000000000000001248abcd"
     if actual != expected {
         t.Fatalf("bits not converted to hex properly: [%s] != [%s]", actual, expected)
     }
@@ -289,7 +295,7 @@ func TestBitsToHex__16(t *testing.T) {
 
     actual := bh.bitsToHex([]int { 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1 })
 
-    expected := "abcd"
+    expected := "000000000000000000000000000000000000000000000000000000000000abcd"
     if actual != expected {
         t.Fatalf("bits not converted to hex properly: [%s] != [%s]", actual, expected)
     }
@@ -301,7 +307,7 @@ func TestBitsToHex__8(t *testing.T) {
 
     actual := bh.bitsToHex([]int { 1, 1, 0, 0, 1, 1, 0, 1 })
 
-    expected := "00cd"
+    expected := "00000000000000000000000000000000000000000000000000000000000000cd"
     if actual != expected {
         t.Fatalf("bits not converted to hex properly: [%s] != [%s]", actual, expected)
     }
@@ -313,7 +319,7 @@ func TestBitsToHex__4(t *testing.T) {
 
     actual := bh.bitsToHex([]int { 1, 1, 0, 1 })
 
-    expected := "000d"
+    expected := "000000000000000000000000000000000000000000000000000000000000000d"
     if actual != expected {
         t.Fatalf("bits not converted to hex properly: [%s] != [%s]", actual, expected)
     }
