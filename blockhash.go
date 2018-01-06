@@ -17,22 +17,49 @@ type Blockhash struct {
     hashbits int
     toColor *color.Model
     hasAlpha bool
-    digest string
+    hexdigest string
+    isOpaqueable bool
 }
 
-func NewBlockhash(image image.Image, hashbits int) *Blockhash {
-    return &Blockhash{
-        image: image,
-        hashbits: hashbits,
-    }
-}
-
+// opaqueableModel automatically fulfilled by existing Go types.
 type opaqueableModel interface {
     Opaque() bool
 }
 
+func NewBlockhash(image image.Image, hashbits int) *Blockhash {
+    // Only images that support alpha are explicitly aware of opaqueness.
+    _, isOpaqueable := image.(opaqueableModel)
 
-func (bh *Blockhash) totalValue(x, y int) (value uint32) {
+    return &Blockhash{
+        image: image,
+        hashbits: hashbits,
+        isOpaqueable: isOpaqueable,
+    }
+}
+
+func (bh *Blockhash) totalValue(p color.Color) (value uint32) {
+    defer func() {
+        if state := recover(); state != nil {
+            log.Panic(state.(error))
+        }
+    }()
+
+    // The RGBA() will return the alpha-multiplied values but the fields will
+    // still be in their premultiplied state.
+    if bh.image.ColorModel() != color.RGBAModel {
+        p = color.RGBAModel.Convert(p)
+    }
+
+    c2 := p.(color.RGBA)
+
+    if bh.isOpaqueable == true && c2.A == 0 {
+        return 765
+    }
+
+    return uint32(c2.R) + uint32(c2.G) + uint32(c2.B)
+}
+
+func (bh *Blockhash) totalValueAt(x, y int) (value uint32) {
     defer func() {
         if state := recover(); state != nil {
             log.Panic(state.(error))
@@ -41,23 +68,7 @@ func (bh *Blockhash) totalValue(x, y int) (value uint32) {
 
     p := bh.image.At(x, y)
 
-    // Has the notion of opaqueness, which implies that is supports an alpha
-    // channel.
-    _, isOpaqueable := p.(opaqueableModel)
-
-    // The RGBA() will return the alpha-multiplied values but the fields will
-    // still be in their premultiplied state.
-    if bh.image.ColorModel() != color.NRGBAModel {
-        p = color.NRGBAModel.Convert(p)
-    }
-
-    c2 := p.(color.NRGBA)
-
-    if isOpaqueable == true && c2.A == 0 {
-        return 765
-    }
-
-    return uint32(c2.R) + uint32(c2.G) + uint32(c2.B)
+    return bh.totalValue(p)
 }
 
 func (bh *Blockhash) median(data []float64) float64 {
@@ -67,17 +78,23 @@ func (bh *Blockhash) median(data []float64) float64 {
         }
     }()
 
-    sort.Float64s(data)
+    copied := make([]float64, len(data))
+    copy(copied, data)
+    sort.Float64s(copied)
 
-    len_ := len(data)
-    if len(data) % 2 == 0 {
-        return data[len_ / 2]
+    len_ := len(copied)
+    if len(copied) % 2 == 0 {
+        v := (copied[len_ / 2 - 1] + copied[len_ / 2]) / 2.0
+
+        return v
     } else {
-        return (data[len_ / 2] + data[len_ / 2 + 1]) / 2.0
+        v := copied[len_ / 2]
+
+        return v
     }
 }
 
-func (bh *Blockhash) bitsToHexhash(bitString []int) string {
+func (bh *Blockhash) bitsToHex(bitString []int) string {
     defer func() {
         if state := recover(); state != nil {
             log.Panic(state.(error))
@@ -112,41 +129,40 @@ func (bh *Blockhash) translateBlocksToBits(blocksInline []float64, pixelsPerBloc
         }
     }()
 
-    results = make([]int, len(blocksInline))
+    blocks := make([]int, len(blocksInline))
     halfBlockValue := pixelsPerBlock * 256.0 * 3.0 / 2.0
 
     bandsize := int(math.Floor(float64(len(blocksInline)) / 4.0))
+
     for i := 0; i < 4; i++ {
         m := bh.median(blocksInline[i * bandsize : (i + 1) * bandsize])
+
         for j := i * bandsize; j < (i + 1) * bandsize; j++ {
             v := blocksInline[j]
 
 // TODO(dustin): Use epsilon.
             if v > m || (math.Abs(v - m) < 1 && m > halfBlockValue) {
-                results[j] = 1
+                blocks[j] = 1
             } else {
-                results[j] = 0
+                blocks[j] = 0
             }
         }
     }
 
-    return results
+    return blocks
 }
 
-func (bh *Blockhash) process() (err error) {
-    defer func() {
-        if state := recover(); state != nil {
-            err = log.Wrap(state.(error))
-        }
-    }()
-
-    if bh.digest != "" {
-        return nil
-    }
-
+func (bh *Blockhash) size() (width int, height int) {
     r := bh.image.Bounds()
-    width := r.Max.X
-    height := r.Max.Y
+
+    width = r.Max.X
+    height = r.Max.Y
+
+    return width, height
+}
+
+func (bh *Blockhash) getBlocks() []float64 {
+    width, height := bh.size()
 
     isEvenX := (width % bh.hashbits) == 0
     isEvenY := (height % bh.hashbits) == 0
@@ -185,10 +201,11 @@ func (bh *Blockhash) process() (err error) {
                 blockTop = int(math.Floor(float64(y) / blockHeight))
                 blockBottom = int(math.Ceil(float64(y) / blockHeight))
             }
+
         }
 
         for x := 0; x < width; x++ {
-            value := bh.totalValue(x, y)
+            value := bh.totalValueAt(x, y)
 
             if isEvenX {
                 blockRight = int(math.Floor(float64(x) / blockWidth))
@@ -219,21 +236,44 @@ func (bh *Blockhash) process() (err error) {
         }
     }
 
-// TODO(dustin): !! Debug here.
     blocksInline := make([]float64, bh.hashbits * bh.hashbits)
+    i := 0
     for y := 0; y < bh.hashbits; y++ {
         for x := 0; x < bh.hashbits; x++ {
-            blocksInline[y * bh.hashbits + x] = blocks[y][x]
+            blocksInline[i] = blocks[y][x]
+            i++
         }
     }
 
-    result := bh.translateBlocksToBits(blocksInline, blockWidth * blockHeight)
-    bh.digest = bh.bitsToHexhash(result)
+    return blocksInline
+}
+
+func (bh *Blockhash) process() (err error) {
+    defer func() {
+        if state := recover(); state != nil {
+            err = log.Wrap(state.(error))
+        }
+    }()
+
+    if bh.hexdigest != "" {
+        return nil
+    }
+
+    blocks := bh.getBlocks()
+
+    width, height := bh.size()
+
+    blockWidth := float64(width) / float64(bh.hashbits)
+    blockHeight := float64(height) / float64(bh.hashbits)
+
+    digest := bh.translateBlocksToBits(blocks, blockWidth * blockHeight)
+
+    bh.hexdigest = bh.bitsToHex(digest)
 
     return nil
 }
 
-func (bh *Blockhash) Hash() string {
+func (bh *Blockhash) Hexdigest() string {
     defer func() {
         if state := recover(); state != nil {
             err := log.Wrap(state.(error))
@@ -244,5 +284,5 @@ func (bh *Blockhash) Hash() string {
     err := bh.process()
     log.PanicIf(err)
 
-    return bh.digest
+    return bh.hexdigest
 }

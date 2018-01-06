@@ -20,7 +20,7 @@ var (
 )
 
 type options struct {
-    Hashbits int `long:"bits" short:"b" default:"16" description:"Hash bit length"`
+    Hashbits int `long:"bits" short:"b" default:"16" description:"Hash bit length (N^2)"`
     Filepaths []string `long:"filepath" short:"f" required:"true" description:"Image file-path (provide at least once)"`
     Digest bool `long:"digest" short:"d" description:"Just print digest (no other text)"`
 }
@@ -47,12 +47,12 @@ func main() {
         log.PanicIf(err)
 
         bh := blockhash.NewBlockhash(image, o.Hashbits)
-        digest := bh.Hash()
+        hexdigest := bh.Hexdigest()
 
         if o.Digest {
-            fmt.Println(digest)
+            fmt.Println(hexdigest)
         } else {
-            fmt.Printf("%s %s\n", filepath, digest)
+            fmt.Printf("%s %s\n", filepath, hexdigest)
         }
     }
 }
