@@ -30,6 +30,11 @@ func NewBlockhash(image image.Image, hashbits int) *Blockhash {
     // Only images that support alpha are explicitly aware of opaqueness.
     _, isOpaqueable := image.(opaqueableModel)
 
+    // If the bits aren't aligned, the digest won't make sense as a hex string.
+    if (hashbits % 4) != 0 {
+        log.Panicf("Bits must be a multiple of four: (%d)", hashbits)
+    }
+
     return &Blockhash{
         image: image,
         hashbits: hashbits,
@@ -116,7 +121,7 @@ func (bh *Blockhash) bitsToHex(bitString []int) string {
     b := new(big.Int)
     b.SetString(string(s), 2)
 
-    width := int(math.Floor(float64(bh.hashbits) / float64(4)))
+    width := int(math.Pow(float64(bh.hashbits), 2.0) / 4.0)
     encoded := fmt.Sprintf("%0" + strconv.Itoa(width) + "x", b)
 
     return encoded
@@ -267,7 +272,6 @@ func (bh *Blockhash) process() (err error) {
     blockHeight := float64(height) / float64(bh.hashbits)
 
     digest := bh.translateBlocksToBits(blocks, blockWidth * blockHeight)
-
     bh.hexdigest = bh.bitsToHex(digest)
 
     return nil

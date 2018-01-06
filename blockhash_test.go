@@ -5,7 +5,6 @@ import (
     "os"
     "image"
     "image/color"
-    "fmt"
     "math"
     "path"
     "path/filepath"
@@ -361,22 +360,38 @@ func TestHash__Size_16(t *testing.T) {
     }
 }
 
-// TODO(dustin): !! Finish. Hash not the right size.
-// func TestHash__Size_32(t *testing.T) {
-//     bits := 32
+func TestHash__Size_32_Grayscale(t *testing.T) {
+    bits := 32
 
-//     f, i := getTestImage(testImagePng1Small)
-//     bh := NewBlockhash(i, bits)
+    f, i := getTestImage(testImagePng1BigGrayscale)
+    bh := NewBlockhash(i, bits)
 
-//     defer f.Close()
+    defer f.Close()
 
-//     actual := len(bh.Hexdigest())
-//     expected := int(math.Pow(float64(bits), 2.0)) / 4
+    actual := bh.Hexdigest()
+    expected := "03fbffe003fffffc07fffffe07ffffff06027fff040003fc000000e800000000079fffff0e01ffff0fe01fff3fff87cf00ffc000003fe000003ff000003ff0000fffffbf47ffe7fb43ffc57101ffc0b101eed9e000ffcfc0007c4180002c000067fffff007fffff01fffffc005fff0c002ff0020197f0020080fd82019007e20"
 
-//     if actual != expected {
-//         t.Fatalf("digest not correct size: (%d) != (%d)", actual, expected)
-//     }
-// }
+    if actual != expected {
+        t.Fatalf("digest not correct: [%s] != [%s]", actual, expected)
+    }
+}
+
+func TestHash__Size_64(t *testing.T) {
+    bits := 64
+
+    f, i := getTestImage(testImagePng1Small)
+    bh := NewBlockhash(i, bits)
+
+    defer f.Close()
+
+    actual := bh.Hexdigest()
+
+    expected := "001ffff7fffff000001fffffffffffc0001fffffffffffe0001ffffffffffff4003ffffffffffffc007ffffffffffffe007fffffffffffff007ffde3ffffffff003f00007fffffff003800061fbffffe00300003071ffff800000000000fffe0000000000000ffc000000000000000000000000000000000000000000000000020ffe7fffffffffe203fc27fffffffff00fd003fffffffff01f80000ffffffff007c00003fffffff03fffe0000ffffff0fffffc0003fffff07ffffffc07ff07c07c0ffffe000f01800007ffff000000000001ffff800000000000ffffc00000000000ffffe00000000000ffffe000000000007ffff000000000007ffff000000007fffffffff8ff6007fffffffffffef003dffffffffffef303dfbfff8ffff67601dfbfff8fbbf0f200ff9fff8f0ff830007f9fff8007f830003f9fffa01fe000003fbfdf287de000001f8fbf5c3fc000000f9f7f9cff8000000f9fff08ff00000007de6f087c00000003ce091a0000000001ce000a0000000000c600020000029fffffffffe7f80003fffffffffff80182fffffffffff02006ffffffffffc0401fffffffffff80001effffffffef000006fffffff08f2000021ffffff0890000009ffffb6188c00000d7fff80900e0000793effa0901c00004307ffa0900c00000002fda191040000510039f3c40c0004590008b7ee080003d100003fee0800"
+
+    if actual != expected {
+        t.Fatalf("digest not correct: [%s] != [%s]", actual, expected)
+    }
+}
 
 func TestHash__Equivalence__Resize(t *testing.T) {
     f, i := getTestImage(testImagePng1Big)
