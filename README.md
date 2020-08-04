@@ -1,4 +1,6 @@
 [![Build Status](https://travis-ci.org/dsoprea/go-perceptualhash.svg?branch=master)](https://travis-ci.org/dsoprea/go-perceptualhash)
+[![codecov](https://codecov.io/gh/dsoprea/go-perceptualhash/branch/master/graph/badge.svg)](https://codecov.io/gh/dsoprea/go-perceptualhash)
+
 
 ## Overview
 
